@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>LASER Blog Automation Tools v2.1</title><meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+:root { color-scheme: dark; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #060E1F;
+  --surface:  #0B1628;
+  --card:     #0F1E38;
+  --border:   #1A3255;
+  --blue:     #0EA5E9;
+  --gold:     #F0A835;
+  --teal:     #14B8A6;
+  --red:      #F43F5E;
+  --green:    #22C55E;
+  --text:     #FFFFFF;
+  --muted:    #B4C2D0;
+  --subtle:   #E2E8F0;
+}
+html, body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "DM Sans", sans-serif; min-height: 100vh; }
+textarea, input, select {
+  font-family: inherit;
+  background: #0B1628;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 10px 12px;
+  width: 100%;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  outline: none;
+  resize: vertical;
+}
+textarea:focus, input:focus, select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(14,165,233,0.12);
+}
+textarea { min-height: 90px; }
+label { display: block; font-size: 12px; font-weight: 600; color: var(--subtle); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+button { font-family: inherit; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.output-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: #F8FAFC;
+}
+.spin {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid rgba(14,165,233,0.3);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.fade-in { animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.container { max-width: 1100px; margin: 0 auto; }
+.serif { font-family: "Playfair Display", Georgia, serif; }
+
+/* header */
+.header-wrap {
+  background: linear-gradient(180deg, #0A1628 0%, #060E1F 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+}
+.header-top { display:flex; align-items:center; justify-content:space-between; padding: 20px 0 16px; }
+.logo-row { display:flex; align-items:center; gap: 14px; }
+.logo-mark { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #0EA5E9, #0284C7); display:flex; align-items:center; justify-content:center; font-weight: 800; font-size: 18px; color: #fff; letter-spacing: -1px; font-family: "Playfair Display", Georgia, serif; flex-shrink: 0;}
+.brand-title { font-family: "Playfair Display", Georgia, serif; font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+.brand-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.status-chip { font-size: 12px; color: var(--muted); padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; display:flex; align-items:center; gap:6px;}
+.green-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); display:inline-block; }
+
+.tab-bar { display: flex; gap: 2px; }
+.tab-btn { padding: 12px 22px; border: none; background: transparent; cursor: pointer; font-size: 14px; display:flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: -1px; transition: all 0.2s; color: var(--muted); border-bottom: 2px solid transparent; }
+.tab-btn.active { color: #fff; font-weight: 600; border-bottom-color: var(--blue); }
+.tab-btn .tab-desc { font-size: 11px; font-weight: 400; opacity: 0.7; }
+
+/* body */
+.body-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 32px 60px; }
+.context-bar { background: rgba(14,165,233,0.06); border: 1px solid rgba(14,165,233,0.18); border-radius: 10px; padding: 12px 16px; margin-bottom: 24px; display:flex; align-items: flex-start; gap: 10px; }
+.context-text { font-size: 12.5px; color: var(--subtle); line-height: 1.6; }
+
+/* sub-tabs */
+.sub-tabs { display: flex; gap: 0; margin-bottom: 24px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); width: fit-content; }
+.sub-tab { padding: 9px 20px; font-size: 13px; font-weight: 600; border: none; background: var(--card); color: var(--muted); cursor: pointer; transition: all 0.2s; }
+.sub-tab.active { background: var(--blue); color: #fff; }
+
+/* grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-opt { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+@media (max-width: 840px) { .grid-2, .grid-opt { grid-template-columns: 1fr; } }
+
+.field { margin-bottom: 16px; }
+.hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+/* tier selector */
+.tier-wrap { display: flex; gap: 10px; flex-wrap: wrap; }
+.tier-btn { flex: 1; min-width: 120px; padding: 10px 14px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--card); color: var(--subtle); cursor: pointer; text-align: center; transition: all 0.2s; }
+.tier-btn.active { border-color: var(--blue); background: rgba(14,165,233,0.1); color: var(--blue); }
+.tier-btn .title { font-weight: 600; font-size: 13px; }
+.tier-btn .desc { font-size: 11px; opacity: 0.85; }
+
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+.panel-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.gold { color: var(--gold); }
+.teal { color: var(--teal); }
+
+.kw-row { display:flex; justify-content:space-between; align-items:center; padding: 6px 8px; border-radius: 6px; cursor: pointer; margin-bottom: 4px; transition: background 0.15s; }
+.kw-row:hover { background: rgba(255,255,255,0.04); }
+.kw-row.selected { background: rgba(14,165,233,0.1); }
+.kw-row.selected .kw-term { color: var(--blue); }
+.kw-term { font-size: 12px; color: var(--text); }
+.kw-stat { font-size: 11px; color: var(--muted); }
+
+.generate-btn { display:flex; align-items:center; justify-content:center; gap: 8px; width: 100%; padding: 13px 24px; border-radius: 8px; border: none; background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%); color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; letter-spacing: 0.02em; margin-top: 8px; }
+.generate-btn:disabled { background: rgba(14,165,233,0.4); cursor: not-allowed; }
+
+/* output */
+.output-wrap { margin-top: 24px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.output-toolbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 16px; display:flex; align-items:center; justify-content:space-between; gap: 10px; }
+.output-body { padding: 20px; background: #080F20; max-height: 560px; overflow-y: auto; }
+.tool-btn { padding: 5px 12px; font-size: 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--subtle); cursor: pointer; transition: all 0.2s; }
+.tool-btn.stop { border-color: var(--red); color: var(--red); }
+.tool-btn.done { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.1); }
+
+/* checkbox list */
+.check-row { display:flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; color: var(--subtle); font-size: 13px; }
+.check-row.on { color: var(--text); }
+.check-row input { width: auto; accent-color: var(--blue); }
+
+.small-note { background: rgba(240,168,53,0.07); border: 1px solid rgba(240,168,53,0.25); border-radius: 10px; padding: 14px; }
+.small-note-title { font-size: 12px; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
+.small-note .row { font-size: 12px; color: var(--subtle); padding: 3px 0; }
+
+.footer { border-top: 1px solid var(--border); padding: 16px 32px; display:flex; justify-content:space-between; align-items: center; font-size: 12px; color: var(--muted); }
+.err { color: var(--red); font-size: 13px; }
+
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(6,14,31,0.85); backdrop-filter: blur(6px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal-card { background: linear-gradient(180deg, #0F1E38 0%, #0B1628 100%); border: 1px solid var(--border); border-radius: 14px; padding: 28px 30px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.modal-title { font-family: "Playfair Display", Georgia, serif; font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 10px; letter-spacing: -0.01em; }
+.modal-sub { font-size: 13px; color: var(--subtle); margin-bottom: 22px; line-height: 1.55; }
+.modal-link { color: var(--blue); text-decoration: none; border-bottom: 1px dotted var(--blue); }
+.modal-link:hover { border-bottom-style: solid; }
+.security-note { background: rgba(14,165,233,0.08); border: 1px solid rgba(14,165,233,0.25); border-radius: 8px; padding: 12px 14px; font-size: 12px; color: var(--subtle); line-height: 1.6; margin-top: 14px; }
+.security-note strong { color: var(--blue); }
+.settings-btn { background: transparent; border: 1px solid var(--border); color: var(--subtle); padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.settings-btn:hover { border-color: var(--blue); color: var(--blue); }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="header-wrap">
+  <div class="container">
+    <div class="header-top">
+      <div class="logo-row">
+        <div class="logo-mark">L</div>
+        <div>
+          <div class="brand-title">LASER Credit Access</div>
+          <div class="brand-sub">Blog Automation Tools · v2.1</div>
+        </div>
+      </div>
+      <div class="header-actions">
+<div class="status-chip"><span class="green-dot"></span><span id="status-label">Powered by Claude</span></div>
+<button class="settings-btn" id="settings-btn">⚙ API Key</button>
+</div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="writer">
+        ✏ Blog Writer
+        <span class="tab-desc">Generate original &amp; repurposed posts</span>
+      </button>
+      <button class="tab-btn" data-tab="optimizer">
+        🔍 Content Optimizer
+        <span class="tab-desc">Audit &amp; score existing posts</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="body-wrap">
+  <div class="context-bar">
+    <span style="font-size: 16px; flex-shrink: 0;">ℹ</span>
+    <p class="context-text" id="context-text">
+      Both sub-modes use the complete LASER Blog Prompt Guide v2.1 — including all brand voice rules, SEO/GEO/AIO requirements, E-E-A-T signals, tier-appropriate structure, and the mandatory differentiator line. Fill in your inputs and generate publish-ready content.
+    </p>
+  </div>
+
+  <!-- ── WRITER TAB ── -->
+  <section id="tab-writer">
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-sub="original">✏ Write Original</button>
+      <button class="sub-tab" data-sub="repurpose">♻ Repurpose Article</button>
+    </div>
+
+    <div class="grid-2">
+      <!-- LEFT COLUMN -->
+      <div>
+        <div class="field">
+          <label>Content Tier</label>
+          <div class="tier-wrap" id="tier-wrap"></div>
+        </div>
+
+        <div class="field">
+          <label>Primary Keyword *</label>
+          <input id="w-keyword" placeholder="e.g. ftc safeguards rule" />
+          <p class="hint">Check Section E of the prompt guide for keyword strategy</p>
+        </div>
+
+        <div class="field" id="topic-brief-field">
+          <label>Topic Brief *</label>
+          <textarea id="w-topic-brief" rows="4" placeholder="Describe the angle, the lender challenge being addressed, and what you want the reader to take away..."></textarea>
+          <p class="hint">2–3 sentences: the angle, the lender challenge, and the reader outcome</p>
+        </div>
+
+        <div class="field hidden" id="source-article-field">
+          <label>Source Article</label>
+          <textarea id="w-source" rows="6" placeholder="Paste the full source article text here, or provide its URL..."></textarea>
+          <p class="hint">Paste full article text or a URL — rewritten entirely in LASER's voice</p>
+        </div>
+
+        <div class="field">
+          <label id="faq-label">FAQs (4–5 Recommended)</label>
+          <div id="faq-list"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div>
+        <div class="panel">
+          <div class="panel-title gold">🔗 Internal Links</div>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 14px;">Only use URLs from the Internal Link Library. Leave blank to auto-suggest.</p>
+          <div class="field"><label>Service Link #1 — URL</label><input id="w-l1url" placeholder="/services/credit-access" /></div>
+          <div class="field"><label>Service Link #1 — Anchor Text</label><input id="w-l1anchor" placeholder="Salesforce-native credit access" /></div>
+          <div id="l2-block">
+            <div class="field"><label>Service Link #2 — URL</label><input id="w-l2url" placeholder="/services/compliance" /></div>
+            <div class="field"><label>Service Link #2 — Anchor Text</label><input id="w-l2anchor" placeholder="built-in lending compliance" /></div>
+          </div>
+          <div class="field"><label>Internal Blog Link #1</label><input id="w-blog1" placeholder="/blog/ftc-safeguards-rule" /></div>
+          <div class="field" id="blog2-block"><label>Internal Blog Link #2</label><input id="w-blog2" placeholder="/blog/what-is-aml-kyc-..." /></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title teal">⚡ High Priority Keywords</div>
+          <div id="kw-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="generate-btn" id="writer-generate">Generate Original Standard Blog</button>
+    <div id="writer-output" class="output-wrap hidden"></div>
+  </section>
+
+  <!-- ── OPTIMIZER TAB ── -->
+  <section id="tab-optimizer" class="hidden">
+    <div class="grid-opt">
+      <div>
+        <div class="field">
+          <label>Paste Your Blog Post *</label>
+          <textarea id="o-content" rows="14" style="min-height: 280px;" placeholder="Paste the full existing LASER blog post here — title, headings, body text, CTAs, FAQs…"></textarea>
+          <p class="hint">Paste the full content — title, body, FAQs, everything</p>
+        </div>
+        <div class="field">
+          <label>Target Primary Keyword (Optional)</label>
+          <input id="o-keyword" placeholder="e.g. ftc safeguards rule" />
+          <p class="hint">If known — otherwise the audit will identify it from the content</p>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <div class="panel-title gold">🎯 Optimization Focus</div>
+          <div id="focus-list"></div>
+        </div>
+        <div class="small-note">
+          <div class="small-note-title">What the Optimizer Checks</div>
+          <div id="check-list"></div>
+        </div>
+      </div>
+    </div>
+    <button class="generate-btn" id="optimizer-generate">Run Full Content Audit</button>
+    <div id="optimizer-output" class="output-wrap hidden"></div>
+  </section>
+
+</div>
+
+<div class="footer">
+  <p>LASER Accuracy, LLC · lasercreditaccess.com · Blog Prompt Guide v2.1</p>
+  <p>Michael Dunleavey, Founder · Midlothian, VA</p>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────
+const state = {
+  tab: "writer",
+  sub: "original",
+  tier: "Standard Blog (1,500–2,000 words)",
+  keyword: "",
+  faqs: ["", "", "", "", ""],
+  focus: ["SEO & Metadata", "Brand Voice", "E-E-A-T Signals", "Structure & CTAs"],
+};
+
+const TIERS = [
+  { id: "News Brief (400–600 words)", label: "News Brief", desc: "400–600 words" },
+  { id: "Standard Blog (1,500–2,000 words)", label: "Standard Blog", desc: "1,500–2,000 words" },
+  { id: "Pillar / Cornerstone (2,500–3,000 words)", label: "Pillar / Cornerstone", desc: "2,500–3,000 words" },
+];
+
+const PRIORITY_KW = [
+  ["ftc safeguards rule", "3,400 vol", "KD 28"],
+  ["kyc compliance software", "1,300 vol", "KD 42"],
+  ["credit bureau integration salesforce", "120 vol", "KD 9 ★"],
+  ["kyc for lenders", "200 vol", "KD 15"],
+  ["salesforce lending app", "300 vol", "KD 20"],
+];
+
+const FOCUS_OPTIONS = ["SEO & Metadata", "Brand Voice", "E-E-A-T Signals", "Structure & CTAs", "Keyword Optimization", "Internal Linking"];
+
+const CHECK_ITEMS = [
+  "Title tag / meta length & keyword",
+  "URL slug format",
+  "Keyword density & placement",
+  "Banned & approved word usage",
+  "Heading hierarchy (H1/H2/H3)",
+  '"So What?" sentence presence',
+  "CTA count and placement",
+  "E-E-A-T signals & author credit",
+  "Mandatory differentiator line",
+  "Internal link count & validity",
+  "Word count vs. tier target",
+  "Image placement markers",
+];
+
+// ─── PROMPT BUILDERS ─────────────────────────────────────────────────────
+const LASER_SYSTEM = `You are an expert SEO, GEO (Generative Engine Optimization), and AIO (AI Overview Optimization) content strategist for LASER Credit Access — a Salesforce-native credit access platform that unifies built-in compliance and decisioning for lenders.
+BRAND VOICE — "The Wise Mentor":
+• Empathetic Authority: acknowledge the lender's challenge before the solution
+• Clarity Through Simplicity: make complex regulatory concepts accessible
+• Actionable Confidence: every section guides toward a clear, decisive next step
+• Leads with solutions, NEVER fear or problems
+APPROVED WORDS: empower, enable, uplift, opportunity, achieve, confidence, transparent, clear, simplified, streamlined, compliant, secure, innovative, tailored, dependable, reliable, trust, optimize, accelerate
+BANNED WORDS: great, awesome, fantastic, game-changer, convoluted, risky, unregulated, loophole, unbeatable, cheapest, old-school, disruptive, next-gen, synergy, revolutionary, combat
+MANDATORY DIFFERENTIATOR (include in every product-adjacent post):
+"Salesforce-native credit access, built-in compliance, and decisioning — unified in a single app, ready from day one."
+CALIBRATED SPECIFICITY: Be precise about regulatory requirements, named sources, and business outcomes. Stay at capability level (not implementation level) when describing LASER's product. Technical depth belongs in demos.
+LASER FACTS: LASER is a Plaid reseller for data aggregation. Genuine differentiators: seamless Salesforce integration, pre-built objects, automated compliance workflows, streamlined decisioning. Do NOT claim proprietary technology LASER does not own.
+KEYWORD RULES:
+• Primary keyword: 2–4 times naturally (2 for News Brief, ~3 Standard, ~4 Pillar)
+• Required placements: first 100 words + at least one H2 + closing section/FAQ
+• Secondary keywords woven in naturally — never stacked or forced
+HEADING STRUCTURE:
+• ONE H1 only (the post title — never repeated in body)
+• H2s for major sections; H3s only nested under H2
+• At least one H2 must contain the primary keyword or close variant
+• No decorative headings — every heading introduces substantive content
+CTA RULES:
+• Standard/Pillar: Max 3 — soft top (first 300 words) + contextual mid + direct close
+• News Brief: Max 2 — contextual mid + direct close
+E-E-A-T REQUIREMENTS:
+1. Author: "Michael Dunleavey, Founder — LASER Credit Access | [X]+ years in credit infrastructure and lending compliance"
+2. Specific regulatory citations: CFR sections, Federal Register notices, named enforcement actions
+3. First-hand experience signal: "In our work with commercial lenders…"
+4. Link to LASER About/Company page (Standard/Pillar)
+5. "So What?" closing sentence in every major section (once in News Brief's "What This Means" section)
+6. No vague "experts say" or "studies show" without a named source
+INTERNAL LINK LIBRARY — ONLY use URLs from this list, never fabricate:
+COMPLY: /blog/ftc-safeguards-rule | /blog/ftc-safeguards-rule-compliance-guidance-for-non-bank-commercial-lender | /blog/the-compliance-landscape-why-credit-reports-and-pii-are-regulated | /blog/california-privacy-2026-what-business-purpose-really-means-now | /blog/fincen-s-aml-cft-modernization-what-financial-institutions-need-to-know | /blog/what-is-aml-kyc-understanding-anti-money-laundering-and-know-your-customer-regul | /blog/federal-aml-and-kyc-requirements-legal-obligations-for-pre-account-opening-verif | /blog/how-proper-kyc-timing-strengthens-compliance-and-prevents-identity-fraud | /blog/the-personal-guarantor-compliance-trap-how-smb-lenders-unknowingly-trigger-consu | /blog/credit-compliance-intelligence-how-three-interconnected-challenges-are-transform
+ACCESS (Fraud & Identity): /blog/banking-fraud-escalates-as-digital-account-opening-surges-survey-reveals-critica | /blog/how-generative-ai-is-transforming-fraud-and-what-financial-institutions-must-do | /blog/justice-department-seizes-fraud-domain-after-28m-bank-account-takeover-scheme-ta | /blog/understanding-synthetic-fraud | /blog/north-american-identity-fraud-reaches-47-billion | /blog/what-lenders-need-to-know-about-third-party-risk | /blog/the-top-10-catastrophic-data-breaches-of-2023-2025 | /blog/national-public-data-breach-security-lessons-for-lenders
+ACCESS/DECIDE: /blog/beyond-the-score-how-alternative-data-could-unlock-credit-access-for-45-million | /blog/the-embedded-finance-revolution-how-credit-is-being-woven-into-every-transaction | /blog/fico-disrupts-mortgage-lending-with-direct-score-licensing | /blog/transunion-2026-consumer-credit-forecast-delinquencies-stabilize-across-all-lend | /blog/complete-guide-to-setting-up-and-configuring-laser-credit-access-on-salesforce`;
+
+function buildRepurposePrompt(f) {
+  return `BLOG REPURPOSING PROMPT — LASER Credit Access
+You are repurposing an external article into a LASER blog post. Use the source article for structural inspiration and key ideas — but rewrite entirely in LASER's Wise Mentor voice. Do NOT copy-paste any text.
+INPUTS:
+CONTENT TIER: ${f.tier}
+PRIMARY KEYWORD: ${f.keyword}
+SOURCE ARTICLE: ${f.sourceArticle || "(not provided — write based on keyword and topic context)"}
+${f.faqs.filter(Boolean).map((q, i) => `FAQ ${i + 1}: ${q}`).join("\n")}
+INTERNAL LINK #1 (Service): ${f.link1url || "(use best match from library)"} | Anchor: ${f.link1anchor || "(suggest appropriate anchor)"}
+INTERNAL LINK #2 (Service): ${f.link2url || "(use best match from library)"} | Anchor: ${f.link2anchor || "(suggest appropriate anchor)"}
+INTERNAL BLOG LINK #1: ${f.blogLink1 || "(use best match from library)"}
+INTERNAL BLOG LINK #2: ${f.blogLink2 || "(use best match from library — skip if News Brief)"}
+OUTPUT (produce in this exact order):
+─── HEADER BLOCK ───
+URL STRUCTURE: /blog/[primary-keyword-as-slug] — all lowercase, hyphens only, ≤60 chars, must contain primary keyword
+META DESCRIPTION: [120–150 chars; hard max 160; includes primary keyword; ends with action phrase; never copied from body]
+TITLE TAG: [Primary Keyword]: [Value/Outcome] — 50–55 chars (hard max 60); lead with primary keyword; no "| LASER Credit Access" suffix
+SECONDARY KEYWORDS: [2–3 supporting terms]
+READ TIME: [X min read]
+CATEGORY: [Compliance | Fraud & Identity | Industry Insights | Product & Technology]
+TAGS: [3–5 labels]
+SOCIAL SNIPPET: [1–2 sentence LinkedIn/Twitter post with [link] placeholder]
+SCHEMA MARKUP REQUIRED: Article schema (always) + BreadcrumbList schema (always) + FAQPage schema (when FAQ section present)
+IMAGE ALT-TEXT (hero): [descriptive, includes primary keyword, max 125 chars]
+IMAGE FILENAME: [keyword-descriptive-hyphens.webp]
+IMAGE PROMPT (hero): [1–2 sentences — clean, professional, data-driven illustration; light blue palette, calm and authoritative; no text overlays]
+─── FULL BLOG POST ───
+H1: [BLOG POST TITLE — one time only, matches Title Tag]
+By Michael Dunleavey, Founder — LASER Credit Access | [X]+ years in credit infrastructure and lending compliance
+${f.tier === "News Brief (400–600 words)" ? `
+▸ NEWS BRIEF STRUCTURE:
+H2: [HOOK — acknowledge the development and its significance to lenders]
+(1 paragraph; include primary keyword within first 100 words; include Internal Blog Link #1)
+[If multi-item content: insert compact table or 3–5 item bulleted list]
+📸 IMAGE PLACEMENT (hero only): description, alt-text, filename, AI prompt
+H2: What This Means for Lenders
+(2 paragraphs; one "So What?" sentence tying to lender business outcomes; insert Internal Link #1 with anchor; mid-content CTA)
+H2: Read the Full Story
+(1 paragraph; required external link to source article; close with direct CTA: Schedule a Discovery Call OR Schedule a Compliance Discussion)
+` : `
+▸ STANDARD / PILLAR STRUCTURE:
+H2: [HOOK — Acknowledge the Lender's Challenge]
+(2–3 paragraphs; primary keyword within first 100 words; soft contextual CTA within first 300 words; end with "So What?" sentence)
+📸 IMAGE PLACEMENT 1
+H2: [SOLUTION — The Insight, Framework, or Regulatory Context] — this H2 must contain the primary keyword or close variant
+(3–4 paragraphs; include TABLE or LIST for comparisons/multi-item content; end with "So What?" sentence)
+[TABLE OR LIST if applicable]
+📸 IMAGE PLACEMENT 2
+H2: [BENEFITS — How This Connects to Lender Business Outcomes]
+(2–3 paragraphs; tie to efficiency, compliance confidence, cost savings, risk reduction; end with "So What?" sentence)
+[MID-CONTENT CTA BOX: "Ready to see how LASER handles [topic] natively inside Salesforce? → Schedule a [Discovery Call / Compliance Discussion]"]
+📸 IMAGE PLACEMENT 3
+H2: [PROOF — Data, Regulatory Citations, Enforcement Evidence]
+(2–3 paragraphs; specific CFR sections, Federal Register citations, named enforcement actions; first-hand experience: "In our work with commercial lenders…"; end with "So What?" sentence)
+📸 IMAGE PLACEMENT 4
+H2: [ACTION — What Lenders Should Do Next]
+(2–3 paragraphs; implementation guidance; use numbered list for multiple steps; end with "So What?" sentence)
+H2: Why LASER for [Topic]
+(1–2 paragraphs; include mandatory differentiator line; connect to LASER's genuine differentiators; link to LASER About/Company page; insert INTERNAL LINK #1 and #2 with anchor text)
+H2: Frequently Asked Questions
+Q: [FAQ 1 rephrased to include secondary/long-tail keyword]
+A: [2–4 sentence answer; lead with the answer, not a restatement]
+(Repeat for FAQ 2–5; insert INTERNAL BLOG LINK #1 and #2 into relevant answers)
+📸 IMAGE PLACEMENT 5
+H2: Ready to [Outcome Tied to Post's Core Topic]?
+(1–2 closing paragraphs; restate single biggest takeaway; close with direct CTA)
+[END-OF-POST CTA: Schedule a Discovery Call → [link] OR Schedule a Compliance Discussion → [link]]
+`}
+─── FEDERAL REGISTER & SOURCE LINKS ───
+List all government, Federal Register, or official regulatory URLs referenced. For News Brief: include required external source link. If none: "No Federal Register citations in this post."
+─── E-E-A-T CHECKLIST (confirm each present) ───
+□ Author attribution present
+□ Specific regulatory citations included
+□ First-hand experience signal present
+□ Link to LASER About/Company page included (Standard/Pillar)
+□ "So What?" closing sentence in every major section
+□ No vague citations — all sources named
+□ Does not claim proprietary technology LASER does not own
+□ Leads with solutions, not fear
+□ Calibrated specificity observed
+□ Mandatory differentiator line included (product-adjacent posts)`;
+}
+
+function buildOriginalPrompt(f) {
+  return `ORIGINAL BLOG WRITER PROMPT — LASER Credit Access
+You are writing a brand-new, original blog post for LASER Credit Access from scratch. No source article. Full SEO, GEO, and AIO optimization required.
+INPUTS:
+PRIMARY KEYWORD: ${f.keyword}
+CONTENT TIER: ${f.tier}
+TOPIC BRIEF: ${f.topicBrief}
+${f.faqs.filter(Boolean).map((q, i) => `FAQ ${i + 1}: ${q}`).join("\n")}
+INTERNAL LINK #1 (Service): ${f.link1url || "(use best match from library)"} | Anchor: ${f.link1anchor || "(suggest appropriate anchor)"}
+INTERNAL LINK #2 (Service): ${f.link2url || "(use best match from library)"} | Anchor: ${f.link2anchor || "(suggest appropriate anchor)"}
+INTERNAL BLOG LINK #1: ${f.blogLink1 || "(use best match from library)"}
+INTERNAL BLOG LINK #2: ${f.blogLink2 || "(use best match from library — skip if News Brief)"}
+OUTPUT (produce in this exact order):
+─── HEADER BLOCK ───
+URL STRUCTURE: /blog/[primary-keyword-as-slug]
+META DESCRIPTION: [120–150 chars; hard max 160; includes primary keyword; ends with action phrase]
+TITLE TAG: [Primary Keyword]: [Value/Outcome] — 50–55 chars (hard max 60)
+SECONDARY KEYWORDS: [2–3 supporting terms]
+KEYWORD JUSTIFICATION:
+  Primary: ${f.keyword} | Vol: [estimate] | KD: [estimate] | LASER Pillar: [ACCESS / DECIDE / COMPLY] | Existing LASER blog targeting this? [Yes/No]
+  Secondary 1: [keyword] — [why included]
+  Secondary 2: [keyword] — [why included]
+  Secondary 3: [optional]
+READ TIME: [X min read]
+CATEGORY: [Compliance | Fraud & Identity | Industry Insights | Product & Technology]
+TAGS: [3–5 labels]
+SOCIAL SNIPPET: [1–2 sentence LinkedIn/Twitter post with [link] placeholder]
+SCHEMA MARKUP REQUIRED: Article + BreadcrumbList + FAQPage (when FAQ present)
+IMAGE ALT-TEXT (hero): [descriptive, includes primary keyword, max 125 chars]
+IMAGE FILENAME: [keyword-descriptive-hyphens.webp]
+IMAGE PROMPT (hero): [clean, professional, data-driven illustration; light blue palette; no text overlays]
+─── ORIGINAL FULL BLOG POST ───
+H1: [BLOG POST TITLE]
+By Michael Dunleavey, Founder — LASER Credit Access | [X]+ years in credit infrastructure and lending compliance
+${f.tier === "News Brief (400–600 words)" ? `
+▸ NEWS BRIEF STRUCTURE (400–600 words):
+H2: [HOOK — acknowledge the challenge or development; primary keyword within first 100 words]
+H2: [CORE INSIGHT — key point; include Internal Blog Link #1; compact table or list if multi-item content exists]
+📸 IMAGE PLACEMENT (hero only)
+H2: What This Means for Lenders
+(2 paragraphs; one "So What?" sentence; Internal Link #1; mid-content CTA)
+H2: Next Steps
+(1 paragraph; direct CTA)
+` : `
+▸ STANDARD / PILLAR STRUCTURE:
+H2: [HOOK — Acknowledge the Lender's Challenge or Industry Development]
+(2–3 paragraphs; primary keyword within first 100 words; soft CTA within first 300 words; end with "So What?" sentence)
+📸 IMAGE PLACEMENT 1
+H2: [SOLUTION — The Insight, Framework, or Regulatory Context] (this H2 must contain primary keyword or close variant)
+(3–4 paragraphs; TABLE or LIST for comparisons/multi-item/regulatory breakdowns; end with "So What?" sentence)
+📸 IMAGE PLACEMENT 2
+H2: [BENEFITS — Connect to Lender Business Outcomes]
+(2–3 paragraphs; measurable outcomes; end with "So What?" sentence)
+[MID-CONTENT CTA BOX: "Want to see how LASER handles [topic] natively inside Salesforce? → Schedule a [Discovery Call / Compliance Discussion]"]
+📸 IMAGE PLACEMENT 3
+H2: [PROOF — Data, Regulatory Citations, Enforcement Evidence]
+(2–3 paragraphs; specific CFR sections, Federal Register notice dates, named enforcement actions; first-hand experience signal; end with "So What?" sentence)
+📸 IMAGE PLACEMENT 4
+H2: [ACTION — What Lenders Should Do Next]
+(2–3 paragraphs; practical steps; numbered list for multiple steps; end with "So What?" sentence)
+H2: Why LASER for [Topic]
+(1–2 paragraphs; mandatory differentiator line; LASER genuine differentiators; link to LASER About/Company page; insert INTERNAL LINK #1 and #2; calibrated specificity — capability-level, not implementation-level)
+H2: Frequently Asked Questions
+(FAQ 1–5 with natural secondary/long-tail keyword rephrasing; 2–4 sentence answers leading with the direct answer; insert INTERNAL BLOG LINK #1 and #2 into most relevant answers)
+📸 IMAGE PLACEMENT 5
+H2: Ready to [Outcome Tied to Post's Core Topic]?
+(1–2 closing paragraphs; restate single biggest takeaway; direct CTA)
+[END-OF-POST CTA: Schedule a Discovery Call → [link] OR Schedule a Compliance Discussion → [link]]
+`}
+─── BACKLINK OUTREACH SUGGESTIONS ───
+Suggest 2–3 industry publications, Salesforce communities, or partner channels where this post could be promoted (target DR 30+).
+─── FEDERAL REGISTER & SOURCE LINKS ───
+List all government/regulatory URLs cited. If none: "No Federal Register citations in this post."
+─── E-E-A-T CHECKLIST ───
+□ Author attribution □ Regulatory citations □ First-hand experience □ LASER About page link □ "So What?" in every section □ Named sources only □ No proprietary overclaims □ Solutions-first □ Calibrated specificity □ Mandatory differentiator line`;
+}
+
+function buildOptimizerPrompt(content, keyword, focus) {
+  return `BLOG OPTIMIZER — LASER Credit Access Content Audit
+You are auditing an existing LASER Credit Access blog post against the LASER Blog Prompt Guide v2.1 rules. Provide a comprehensive, actionable analysis.
+${keyword ? `TARGET PRIMARY KEYWORD: ${keyword}` : "PRIMARY KEYWORD: (identify from content)"}
+${focus.length > 0 ? `OPTIMIZATION FOCUS AREAS: ${focus.join(", ")}` : ""}
+BLOG CONTENT TO AUDIT:
+---
+${content}
+---
+PRODUCE THIS COMPLETE AUDIT REPORT:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 OVERALL SCORE & TIER IDENTIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Detected Content Tier: [News Brief / Standard / Pillar]
+Word Count: [count] | Target Range: [range for detected tier] | Status: [On Target / Too Short / Too Long]
+SCORE BREAKDOWN (each out of 20):
+• SEO & Metadata:        [X/20] — [one-line summary]
+• Brand Voice & Tone:    [X/20] — [one-line summary]
+• E-E-A-T Signals:       [X/20] — [one-line summary]
+• Structure & Flow:      [X/20] — [one-line summary]
+• CTA Placement:         [X/20] — [one-line summary]
+OVERALL SCORE: [X/100]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔴 CRITICAL ISSUES (Must Fix Before Publishing)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+For each critical issue:
+ISSUE: [name]
+PROBLEM: [specific description — quote from the post if applicable]
+FIX: [exact corrective action]
+REVISED TEXT: [if applicable, provide replacement text in LASER's voice]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🟡 MODERATE ISSUES (Should Fix)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[Same format as critical issues]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🟢 MINOR IMPROVEMENTS (Nice to Have)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[List as bullet points with brief fix notes]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ WHAT'S WORKING (Preserve These)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[List 3–5 specific strengths with brief explanation]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 OPTIMIZED METADATA BLOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Produce a corrected/optimized version of these elements:
+URL STRUCTURE: /blog/[optimized-slug]
+TITLE TAG: [optimized, 50–55 chars]
+META DESCRIPTION: [optimized, 120–150 chars, ends with action phrase]
+IMAGE ALT-TEXT: [optimized, ≤125 chars]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 PRE-PUBLISH CHECKLIST STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ or ✗ for each item:
+□ Title 50–55 chars, leads with primary keyword
+□ Meta description 120–150 chars, unique, action phrase, includes keyword
+□ URL slug lowercase, hyphenated, ≤60 chars, contains keyword
+□ Primary keyword used 2–4 times naturally, required placements present
+□ ONE H1 only; H2s for major sections; no skipped heading levels
+□ At least one H2 contains primary keyword or close variant
+□ Internal links: count per tier requirements; URLs from library only
+□ Word count meets tier minimum
+□ CTA count correct per tier, placed correctly
+□ Author attribution present
+□ Regulatory citations specific and named
+□ First-hand experience signal included
+□ "So What?" sentence in every major section
+□ No banned words used
+□ Mandatory differentiator line present (product-adjacent)
+□ LASER not overclaimed as proprietary technology owner
+□ Leads with solutions, not fear
+□ Calibrated specificity observed
+□ FAQPage schema warranted (if FAQ section present)
+□ Image placement markers included with description/alt/filename/AI prompt
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔑 TOP 3 PRIORITY ACTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. [Highest-impact fix]
+2. [Second priority]
+3. [Third priority]`;
+}
+
+// ─── RENDERERS ───────────────────────────────────────────────────────────
+function renderTiers() {
+  const wrap = document.getElementById("tier-wrap");
+  wrap.innerHTML = "";
+  TIERS.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "tier-btn" + (state.tier === t.id ? " active" : "");
+    b.innerHTML = `<div class="title">${t.label}</div><div class="desc">${t.desc}</div>`;
+    b.onclick = () => { state.tier = t.id; renderTiers(); renderFaqs(); renderConditional(); updateGenerateBtn(); };
+    wrap.appendChild(b);
+  });
+}
+
+function renderFaqs() {
+  const isNews = state.tier === "News Brief (400–600 words)";
+  const max = isNews ? 2 : 5;
+  document.getElementById("faq-label").textContent = "FAQs " + (isNews ? "(Optional — max 2 for News Brief)" : "(4–5 Recommended)");
+  const list = document.getElementById("faq-list");
+  list.innerHTML = "";
+  for (let i = 0; i < max; i++) {
+    const inp = document.createElement("input");
+    inp.style.marginBottom = "8px";
+    inp.placeholder = `FAQ ${i + 1}: Question a lender would actually ask…`;
+    inp.value = state.faqs[i] || "";
+    inp.addEventListener("input", e => { state.faqs[i] = e.target.value; });
+    list.appendChild(inp);
+  }
+}
+
+function renderConditional() {
+  const isNews = state.tier === "News Brief (400–600 words)";
+  document.getElementById("l2-block").style.display = isNews ? "none" : "";
+  document.getElementById("blog2-block").style.display = isNews ? "none" : "";
+  const isOrig = state.sub === "original";
+  document.getElementById("topic-brief-field").classList.toggle("hidden", !isOrig);
+  document.getElementById("source-article-field").classList.toggle("hidden", isOrig);
+}
+
+function renderKeywords() {
+  const list = document.getElementById("kw-list");
+  list.innerHTML = "";
+  PRIORITY_KW.forEach(([kw, vol, kd]) => {
+    const row = document.createElement("div");
+    row.className = "kw-row" + (state.keyword === kw ? " selected" : "");
+    row.innerHTML = `<span class="kw-term">${kw}</span><span class="kw-stat">${vol} · ${kd}</span>`;
+    row.onclick = () => {
+      state.keyword = kw;
+      document.getElementById("w-keyword").value = kw;
+      renderKeywords();
+    };
+    list.appendChild(row);
+  });
+}
+
+function renderFocus() {
+  const list = document.getElementById("focus-list");
+  list.innerHTML = "";
+  FOCUS_OPTIONS.forEach(f => {
+    const lbl = document.createElement("label");
+    const on = state.focus.includes(f);
+    lbl.className = "check-row" + (on ? " on" : "");
+    lbl.innerHTML = `<input type="checkbox" ${on ? "checked" : ""}/> ${f}`;
+    const cb = lbl.querySelector("input");
+    cb.onchange = () => {
+      state.focus = state.focus.includes(f) ? state.focus.filter(x => x !== f) : [...state.focus, f];
+      renderFocus();
+    };
+    list.appendChild(lbl);
+  });
+}
+
+function renderCheckList() {
+  const list = document.getElementById("check-list");
+  list.innerHTML = CHECK_ITEMS.map(item => `<div class="row">✓ ${item}</div>`).join("");
+}
+
+function updateGenerateBtn() {
+  const btn = document.getElementById("writer-generate");
+  const tierShort = state.tier.startsWith("News") ? "News Brief" :
+                    state.tier.startsWith("Standard") ? "Standard Blog" : "Pillar Blog";
+  const mode = state.sub === "repurpose" ? "Repurposed" : "Original";
+  btn.textContent = `Generate ${mode} ${tierShort}`;
+}
+
+function updateContextText() {
+  const el = document.getElementById("context-text");
+  if (state.tab === "writer") {
+    el.textContent = "Both sub-modes use the complete LASER Blog Prompt Guide v2.1 — including all brand voice rules, SEO/GEO/AIO requirements, E-E-A-T signals, tier-appropriate structure, and the mandatory differentiator line. Fill in your inputs and generate publish-ready content.";
+  } else {
+    el.textContent = "Paste an existing LASER blog post to receive a scored audit against all v2.1 rules — with specific issues, revised text, an optimized metadata block, and a complete pre-publish checklist status.";
+  }
+}
+
+// ─── TAB SWITCHING ───────────────────────────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(b => {
+  b.onclick = () => {
+    state.tab = b.dataset.tab;
+    document.querySelectorAll(".tab-btn").forEach(x => x.classList.toggle("active", x.dataset.tab === state.tab));
+    document.getElementById("tab-writer").classList.toggle("hidden", state.tab !== "writer");
+    document.getElementById("tab-optimizer").classList.toggle("hidden", state.tab !== "optimizer");
+    updateContextText();
+  };
+});
+
+document.querySelectorAll(".sub-tab").forEach(b => {
+  b.onclick = () => {
+    state.sub = b.dataset.sub;
+    document.querySelectorAll(".sub-tab").forEach(x => x.classList.toggle("active", x.dataset.sub === state.sub));
+    renderConditional();
+    updateGenerateBtn();
+  };
+});
+
+// keyword sync
+document.getElementById("w-keyword").addEventListener("input", e => {
+  state.keyword = e.target.value;
+  renderKeywords();
+});
+
+// ─── OUTPUT PANEL ────────────────────────────────────────────────────────
+function renderOutputPanel(targetId, { loading, output, error, onStop }) {
+  const el = document.getElementById(targetId);
+  el.classList.remove("hidden");
+  const wordCount = (output || "").split(/\s+/).filter(Boolean).length;
+  const statusText = loading ? "Generating…" : error ? "Error" : `${wordCount} words generated`;
+
+  const copyBtn = (!loading && output) ? `<button class="tool-btn" id="${targetId}-copy">Copy All</button>` : "";
+  const stopBtn = loading ? `<button class="tool-btn stop" id="${targetId}-stop">Stop</button>` : "";
+
+  el.innerHTML = `
+    <div class="output-toolbar">
+      <div style="display:flex; align-items:center; gap:8px;">
+        ${loading ? '<span class="spin"></span>' : ''}
+        <span style="font-size:12px; color: var(--subtle); font-weight:500;">${statusText}</span>
+      </div>
+      <div style="display:flex; gap:8px;">${stopBtn}${copyBtn}</div>
+    </div>
+    <div class="output-body">
+      ${error ? `<div class="err">⚠ ${escapeHtml(error)}</div>` : `<pre class="output-content">${escapeHtml(output || "")}</pre>`}
+    </div>
+  `;
+
+  if (copyBtn) {
+    document.getElementById(`${targetId}-copy`).onclick = function() {
+      navigator.clipboard.writeText(output);
+      this.textContent = "✓ Copied";
+      this.classList.add("done");
+      setTimeout(() => { this.textContent = "Copy All"; this.classList.remove("done"); }, 2000);
+    };
+  }
+  if (stopBtn) {
+    document.getElementById(`${targetId}-stop`).onclick = onStop;
+  }
+}
+
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ─── LLM CALL (via cowork.sample) ────────────────────────────────────────
+async function runGeneration(outputId, systemPrompt, userPrompt, btn, originalBtnLabel) {
+  const apiKey = getApiKey();
+  if (!apiKey) { openSetupModal(); return; }
+  const model = localStorage.getItem('laser_model') || 'claude-sonnet-4-5';
+
+  let stopped = false;
+  const controller = new AbortController();
+  const onStop = () => { stopped = true; controller.abort(); renderOutputPanel(outputId, { loading: false, output: '[Stopped by user]', error: '' }); btn.disabled = false; btn.textContent = originalBtnLabel; };
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Generating…';
+  renderOutputPanel(outputId, { loading: true, output: '', error: '', onStop });
+
+  let accumulated = '';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 8000,
+        system: systemPrompt,
+        stream: true,
+        messages: [{ role: 'user', content: userPrompt }]
+      }),
+      signal: controller.signal
+    });
+
+    if (!res.ok) {
+      let errMsg = 'HTTP ' + res.status;
+      try {
+        const errData = await res.json();
+        errMsg = errData?.error?.message || errMsg;
+        if (res.status === 401) errMsg = 'Invalid API key. Click “API Key” in the header to update it.';
+        if (res.status === 429) errMsg = 'Rate limited. Wait a moment and try again.';
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done || stopped) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (!data || data === '[DONE]') continue;
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+            accumulated += parsed.delta.text;
+            renderOutputPanel(outputId, { loading: true, output: accumulated, error: '', onStop });
+          }
+        } catch (_) {}
+      }
+    }
+    renderOutputPanel(outputId, { loading: false, output: accumulated || '(no content returned)', error: '' });
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    renderOutputPanel(outputId, { loading: false, output: accumulated, error: e.message || 'An error occurred' });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalBtnLabel;
+  }
+}
+
+// ─── API KEY MANAGEMENT ──────────────────────────────────────────────────
+function getApiKey() { return localStorage.getItem('laser_anthropic_key') || ''; }
+function setApiKey(k) { localStorage.setItem('laser_anthropic_key', k); updateStatusLabel(); }
+function clearApiKey() { localStorage.removeItem('laser_anthropic_key'); updateStatusLabel(); }
+function updateStatusLabel() {
+  const el = document.getElementById('status-label');
+  el.textContent = getApiKey() ? 'Key connected' : 'No API key';
+  el.parentElement.querySelector('.green-dot').style.background = getApiKey() ? 'var(--green)' : 'var(--red)';
+}
+function openSetupModal() {
+  const modal = document.getElementById('setup-modal');
+  modal.classList.remove('hidden');
+  document.getElementById('api-key-input').value = getApiKey();
+  const savedModel = localStorage.getItem('laser_model') || 'claude-sonnet-4-5';
+  document.getElementById('model-select').value = savedModel;
+}
+function closeSetupModal() { document.getElementById('setup-modal').classList.add('hidden'); }
+
+document.getElementById('settings-btn').onclick = openSetupModal;
+document.getElementById('save-key-btn').onclick = () => {
+  const k = document.getElementById('api-key-input').value.trim();
+  const m = document.getElementById('model-select').value;
+  if (k && !k.startsWith('sk-ant-')) {
+    if (!confirm('That key does not look like an Anthropic API key (normally starts with sk-ant-). Save anyway?')) return;
+  }
+  if (k) setApiKey(k); else clearApiKey();
+  localStorage.setItem('laser_model', m);
+  closeSetupModal();
+};
+document.getElementById('setup-modal').onclick = (e) => {
+  if (e.target.id === 'setup-modal' && getApiKey()) closeSetupModal();
+};
+
+// ─── GENERATE HANDLERS ───────────────────────────────────────────────────
+document.getElementById("writer-generate").onclick = function() {
+  const keyword = document.getElementById("w-keyword").value.trim();
+  if (!keyword) { alert("Please enter a primary keyword."); return; }
+
+  const fields = {
+    tier: state.tier,
+    keyword,
+    topicBrief: document.getElementById("w-topic-brief").value,
+    sourceArticle: document.getElementById("w-source").value,
+    faqs: state.faqs.slice(),
+    link1url: document.getElementById("w-l1url").value,
+    link1anchor: document.getElementById("w-l1anchor").value,
+    link2url: document.getElementById("w-l2url").value,
+    link2anchor: document.getElementById("w-l2anchor").value,
+    blogLink1: document.getElementById("w-blog1").value,
+    blogLink2: document.getElementById("w-blog2").value,
+  };
+
+  const userPrompt = state.sub === "repurpose" ? buildRepurposePrompt(fields) : buildOriginalPrompt(fields);
+  const originalLabel = this.textContent;
+  runGeneration("writer-output", LASER_SYSTEM, userPrompt, this, originalLabel);
+};
+
+document.getElementById("optimizer-generate").onclick = function() {
+  const content = document.getElementById("o-content").value.trim();
+  if (!content) { alert("Please paste your blog content first."); return; }
+  const kw = document.getElementById("o-keyword").value.trim();
+  const prompt = buildOptimizerPrompt(content, kw, state.focus);
+  runGeneration("optimizer-output", LASER_SYSTEM, prompt, this, "Run Full Content Audit");
+};
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+renderTiers();
+renderFaqs();
+renderConditional();
+renderKeywords();
+renderFocus();
+renderCheckList();
+updateGenerateBtn();
+updateContextText();
+updateStatusLabel();
+if (!getApiKey()) openSetupModal();
+</script>
+
+<div class="modal-backdrop hidden" id="setup-modal">
+  <div class="modal-card">
+    <div class="modal-title">Connect your Anthropic API key</div>
+    <p class="modal-sub">
+      This tool calls Claude directly from your browser. To generate content, paste your Anthropic API key below.
+      Get one at <a class="modal-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+    </p>
+    <div class="field">
+      <label>Anthropic API Key</label>
+      <input type="password" id="api-key-input" placeholder="sk-ant-api03-…" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label>Model (optional)</label>
+      <select id="model-select">
+        <option value="claude-sonnet-4-5">Claude Sonnet 4.5 (recommended)</option>
+        <option value="claude-opus-4-5">Claude Opus 4.5 (best quality)</option>
+        <option value="claude-haiku-4-5">Claude Haiku 4.5 (fastest)</option>
+      </select>
+    </div>
+    <div class="security-note">
+      <strong>Your key stays on your device.</strong> It is stored only in your browser&rsquo;s local storage and sent directly to Anthropic&rsquo;s API — never to any other server. Clear it anytime from the &ldquo;API Key&rdquo; button in the header.
+    </div>
+    <button class="generate-btn" id="save-key-btn">Save &amp; Continue</button>
+  </div>
+</div>
+
+</body>
+</html>
